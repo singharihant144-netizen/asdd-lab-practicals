@@ -181,5 +181,89 @@ const menu = document.querySelector(".menu-toggle");
 menu.addEventListener("click", () => { const open = menu.getAttribute("aria-expanded") === "true"; menu.setAttribute("aria-expanded", String(!open)); document.querySelector(".topbar nav").classList.toggle("nav-open", !open); });
 document.querySelectorAll(".topbar nav a").forEach(a => a.addEventListener("click", () => { menu.setAttribute("aria-expanded","false"); document.querySelector(".topbar nav").classList.remove("nav-open"); }));
 
-const observer = new IntersectionObserver(entries => entries.forEach(entry => { if (entry.isIntersecting) { entry.target.classList.add("is-visible"); observer.unobserve(entry.target); } }), {threshold:.12});
-document.querySelectorAll(".reveal").forEach(el => observer.observe(el));
+if ("IntersectionObserver" in window) {
+  const observer = new IntersectionObserver(entries => entries.forEach(entry => { if (entry.isIntersecting) { entry.target.classList.add("is-visible"); observer.unobserve(entry.target); } }), {threshold:.12});
+  document.querySelectorAll(".reveal").forEach(el => observer.observe(el));
+} else {
+  document.querySelectorAll(".reveal").forEach(el => el.classList.add("is-visible"));
+}
+
+// The two study areas behave as keyboard-accessible tabs. The shared aa help remains available below them.
+const tabButtons = [...document.querySelectorAll(".site-tab")];
+const tabPanels = [...document.querySelectorAll(".site-panel")];
+function activateTab(button, moveFocus = false) {
+  tabButtons.forEach(item => {
+    const selected = item === button;
+    item.setAttribute("aria-selected", String(selected));
+    item.tabIndex = selected ? 0 : -1;
+    item.classList.toggle("is-active", selected);
+  });
+  tabPanels.forEach(panel => { panel.hidden = panel.id !== button.getAttribute("aria-controls"); });
+  document.querySelector(".topbar nav").classList.remove("nav-open");
+  document.querySelector(".menu-toggle").setAttribute("aria-expanded", "false");
+  if (moveFocus) button.focus();
+  if (button.id === "tab-viva") document.querySelector(".topbar").scrollIntoView({behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth"});
+}
+tabButtons.forEach((button, index) => {
+  button.addEventListener("click", () => activateTab(button));
+  button.addEventListener("keydown", event => {
+    let next = index;
+    if (event.key === "ArrowRight") next = (index + 1) % tabButtons.length;
+    else if (event.key === "ArrowLeft") next = (index - 1 + tabButtons.length) % tabButtons.length;
+    else if (event.key === "Home") next = 0;
+    else if (event.key === "End") next = tabButtons.length - 1;
+    else return;
+    event.preventDefault(); activateTab(tabButtons[next], true);
+  });
+});
+
+// The question bank is built from the supplied PDF. Searching includes both the question and its answer.
+const experiments = window.vivaExperiments || [];
+const searchBox = document.querySelector("#viva-search");
+const experimentFilter = document.querySelector("#viva-filter");
+const vivaGroups = document.querySelector("#viva-groups");
+const resultCount = document.querySelector("#viva-result-count");
+const emptyState = document.querySelector("#viva-empty");
+if (experiments.length && searchBox && experimentFilter && vivaGroups) {
+  const totalQuestions = experiments.reduce((count, item) => count + item.questions.length, 0);
+  experimentFilter.innerHTML += experiments.map(exp => `<option value="${exp.number}">Experiment ${Number(exp.number)} · ${escapeHtml(exp.title)}</option>`).join("");
+  vivaGroups.innerHTML = experiments.map(exp => `<section class="viva-group" data-experiment="${exp.number}"><div class="viva-group-heading"><span class="viva-group-num">${exp.number}</span><div><small>EXPERIMENT ${Number(exp.number)}</small><h3>${escapeHtml(exp.title)}</h3></div><span class="group-count">${exp.questions.length} questions</span></div><div class="question-list">${exp.questions.map(item => `<details class="viva-question" data-search="${escapeHtml((item.question+" "+item.answer).toLowerCase())}"><summary><span class="q-number">Q${item.number}</span><span class="q-title">${escapeHtml(item.question)}</span><span class="q-toggle" aria-hidden="true">+</span></summary><div class="q-answer"><span>SHORT ANSWER</span><p>${escapeHtml(item.answer)}</p></div></details>`).join("")}</div></section>`).join("");
+  resultCount.textContent = `${totalQuestions} questions · 6 experiments`;
+  function filterViva() {
+    const query = searchBox.value.trim().toLowerCase();
+    const selected = experimentFilter.value;
+    let visible = 0;
+    vivaGroups.querySelectorAll(".viva-group").forEach(group => {
+      let shownInGroup = 0;
+      const groupMatches = selected === "all" || selected === group.dataset.experiment;
+      group.querySelectorAll(".viva-question").forEach(card => {
+        const match = groupMatches && (!query || card.dataset.search.includes(query));
+        card.hidden = !match;
+        if (match) { shownInGroup++; visible++; }
+      });
+      group.hidden = shownInGroup === 0;
+    });
+    resultCount.textContent = `${visible} of ${totalQuestions} questions shown`;
+    emptyState.hidden = visible !== 0;
+  }
+  searchBox.addEventListener("input", filterViva);
+  experimentFilter.addEventListener("change", filterViva);
+  document.querySelector("#answers-toggle").addEventListener("click", event => {
+    const cards = [...vivaGroups.querySelectorAll(".viva-question:not([hidden])")];
+    const openAll = cards.some(card => !card.open);
+    cards.forEach(card => { card.open = openAll; });
+    event.currentTarget.textContent = openAll ? "Hide all answers" : "Show all answers";
+  });
+} else if (resultCount) {
+  resultCount.textContent = "The question list could not be loaded. Use the PDF download to open the complete guide.";
+}
+
+const commandGroups = [
+  ["Git", [["git --version","Check installed version"],["git config --global user.name \"Your Name\"","Set commit author name"],["git config --global user.email \"you@example.com\"","Set commit author email"],["git init","Initialize repository"],["git status","Check file status"],["git add .","Stage changes"],["git commit -m \"Initial commit\"","Record changes"],["git log --oneline","View commit history"],["git branch feature","Create branch"],["git checkout feature","Switch branch"],["git checkout main","Switch to main"],["git merge feature","Merge branch"]]],
+  ["GitHub", [["git clone <repo-url>","Clone remote repository"],["git push origin main","Push main branch"]]],
+  ["Docker", [["docker --version","Check Docker"],["docker build -t myapp .","Build image"],["docker images","List images"],["docker run myapp","Run container"]]],
+  ["Compose", [["docker compose up --build","Build/start services"],["docker compose ps","Check status"],["docker compose down","Stop/remove containers"]]],
+  ["Kubernetes", [["minikube start","Start local cluster"],["kubectl get nodes","List nodes"],["kubectl apply -f deployment.yaml","Apply YAML resources"],["kubectl get pods","List Pods"],["kubectl scale deployment myapp --replicas=3","Scale to 3 replicas"],["kubectl delete deployment myapp","Delete Deployment"]]]
+];
+const commandList = document.querySelector("#command-list");
+if (commandList) commandList.innerHTML = commandGroups.map(([group, commands]) => `<section><h3>${escapeHtml(group)}</h3>${commands.map(([command,purpose]) => `<div class="command-row"><code>${escapeHtml(command)}</code><span>${escapeHtml(purpose)}</span></div>`).join("")}</section>`).join("");
