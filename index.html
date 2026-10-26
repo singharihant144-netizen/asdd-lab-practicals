@@ -4,21 +4,24 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#f5efe2">
-  <meta name="description" content="aa hacks: an animated ASDD lab guide, practical viva questions, preparation tools, and document downloads.">
-  <title>aa hacks | ASDD lab & viva prep</title>
+  <meta name="description" content="aa hacks: responsive ASDD and SMLDS experiment guides, complete copyable Python labs, datasets, viva preparation, and aa troubleshooting.">
+  <title>aa hacks | ASDD, SMLDS & viva prep</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="style-viva.css">
+  <link rel="stylesheet" href="style-smlds.css">
   <script defer src="viva-data.js"></script>
+  <script defer src="smlds-data.js"></script>
+  <script defer src="viva-data-smlds.js"></script>
   <script defer src="app.js"></script>
 </head>
 <body>
   <div class="grain" aria-hidden="true"></div>
   <header class="topbar">
     <a class="brand" href="#top" aria-label="aa hacks home"><span class="brand-mark"><span>a</span><span>a</span><i></i></span><span>aa <b>hacks</b></span></a>
-    <nav class="site-tabs" role="tablist" aria-label="Study sections"><button id="tab-labs" class="site-tab is-active" role="tab" aria-selected="true" aria-controls="panel-labs" tabindex="0">ASDD Lab</button><button id="tab-viva" class="site-tab" role="tab" aria-selected="false" aria-controls="panel-viva" tabindex="-1">Viva Prep <span class="tab-count">124</span></button><a class="site-tab-link" href="#help">Ask aa <span>↗</span></a></nav>
+    <nav class="site-tabs" aria-label="Study sections"><div class="study-tablist" role="tablist" aria-label="Choose a study area"><button id="tab-labs" class="site-tab is-active" role="tab" aria-selected="true" aria-controls="panel-labs" tabindex="0">ASDD Lab</button><button id="tab-smlds" class="site-tab" role="tab" aria-selected="false" aria-controls="panel-smlds" tabindex="-1">SMLDS Lab</button><button id="tab-viva" class="site-tab" role="tab" aria-selected="false" aria-controls="panel-viva" tabindex="-1">Viva Prep <span class="tab-count">228</span></button></div><a class="site-tab-link" href="#help">Ask aa <span>↗</span></a></nav>
     <a class="nav-download" href="asdd-hack-aa2.docx" download>Download lab guide <span>↓</span></a>
     <button class="menu-toggle" aria-label="Open menu" aria-expanded="false">☰</button>
   </header>
@@ -29,9 +32,9 @@
       <div class="hero-copy reveal">
         <div class="eyebrow"><i class="live-dot"></i> YOUR FRIENDLY SOFTWARE LAB <span>· RGIT / AI & DS</span></div>
         <h1>Learn it.<br><em>Build it. Explain it.</em></h1>
-        <p class="hero-lede">Seven hands-on ASDD labs, viva questions from your study guide, and a friendly helper for the moment something goes sideways.</p>
+        <p class="hero-lede">Seven hands-on ASDD labs, 26 SMLDS experiments with their datasets, viva practice for both subjects, and a friendly helper when something goes sideways.</p>
         <div class="hero-actions"><a class="button primary" href="#practicals">Pick a practical <span>↓</span></a><a class="text-link" href="asdd-hack-aa2.docx" download>Download the full DOCX <span>↗</span></a></div>
-        <div class="hero-meta"><span>01—07 LABS</span><span>124 VIVA Q&As</span><span>LEARN · MAKE · EXPLAIN</span></div>
+        <div class="hero-meta"><span>07 ASDD LABS</span><span>26 SMLDS EXPERIMENTS</span><span>228 VIVA Q&As</span></div>
       </div>
       <div class="hero-art reveal" aria-label="Illustration of an animated lab dashboard and friendly aa helper">
         <div class="orbit orbit-one"></div><div class="orbit orbit-two"></div>
@@ -78,25 +81,35 @@
     </section>
     </section>
 
+    <section id="panel-smlds" class="site-panel smlds-panel" role="tabpanel" aria-labelledby="tab-smlds" tabindex="0" hidden>
+      <section class="smlds-hero wrap">
+        <div class="smlds-hero-copy"><div class="eyebrow"><i class="live-dot"></i> STATISTICS · MACHINE LEARNING · DATA SCIENCE</div><h1>Data in.<br><em>Insights out.</em></h1><p class="hero-lede">Explore every supplied SMLDS experiment, work with its dataset, and copy or download a complete runnable Python script.</p><div class="hero-actions"><a class="button primary" href="#smlds-workbench">Browse experiments <span>↓</span></a><a class="button outline" href="smlds-study-pack.zip" download>Download all materials <span>↘</span></a></div><div class="hero-meta"><span>04 DATASETS</span><span>26 COMPLETE SCRIPTS</span><span>104 SMLDS VIVA Q&As</span></div></div>
+        <div class="smlds-visual" aria-label="Four connected datasets flow into a machine learning model"><div class="data-orbit orbit-a"></div><div class="data-orbit orbit-b"></div><div class="data-core"><span>Σ</span><b>DATA<br>LAB</b></div><span class="data-chip chip-a">IRIS · 150</span><span class="data-chip chip-b">TITANIC · 891</span><span class="data-chip chip-c">HOUSING · 20.6K</span><span class="data-chip chip-d">CANCER · 569</span><span class="data-spark">✳</span></div>
+      </section>
+      <section class="dataset-section wrap" aria-labelledby="dataset-heading"><div class="section-heading"><div><div class="section-index">[ YOUR DATASETS ]</div><h2 id="dataset-heading">Start with the<br>right data<span class="red-dot">.</span></h2></div><p>Download any CSV by itself or save the full pack with all scripts and datasets. The original experiment scripts are preserved.</p></div><div id="smlds-datasets" class="dataset-grid"></div><p class="dataset-note">Some supplied scripts use scikit-learn or Seaborn dataset loaders, which may need internet on first run. CSV files are included in the study pack for local data access.</p></section>
+      <section id="smlds-workbench" class="smlds-workbench"><div class="wrap"><div class="section-heading"><div><div class="section-index">[ THE EXPERIMENTS ]</div><h2>Pick a dataset.<br>Run the idea<span class="red-dot">.</span></h2></div><p>Every card has the complete original Python script. Copy one whole experiment to your editor, or download its file.</p></div><div class="smlds-tools"><label class="search-box"><span aria-hidden="true">⌕</span><span class="sr-only">Search SMLDS experiments</span><input id="smlds-search" type="search" placeholder="Search a dataset, method, or file…" autocomplete="off"></label><label class="filter-box"><span class="sr-only">Filter SMLDS experiments by dataset</span><select id="smlds-filter"><option value="all">All four datasets</option></select></label></div><p id="smlds-result-count" class="result-count" aria-live="polite">Loading experiments…</p><div id="smlds-experiments" class="smlds-experiment-grid"></div><div id="smlds-empty" class="empty-state" hidden>No experiments match that search. Try Iris, bootstrap, PCA, or regression.</div><p id="copy-status" class="copy-status" role="status" aria-live="polite"></p></div></section>
+    </section>
+
     <section id="panel-viva" class="site-panel viva-panel" role="tabpanel" aria-labelledby="tab-viva" tabindex="0" hidden>
+      <div class="viva-track-switch wrap" role="tablist" aria-label="Choose a subject for viva practice"><button class="viva-track is-active" id="viva-track-asdd" type="button" role="tab" aria-selected="true" aria-controls="question-bank" data-viva-track="asdd">ASDD Viva <span>124 Q&As</span></button><button class="viva-track" id="viva-track-smlds" type="button" role="tab" aria-selected="false" aria-controls="question-bank" data-viva-track="smlds">SMLDS Viva <span>104 Q&As</span></button></div>
       <section class="viva-hero wrap">
-        <div class="viva-hero-copy"><div class="eyebrow"><i class="live-dot"></i> SIX EXPERIMENTS · 124 QUESTIONS</div><h1>Know it.<br><em>Say it clearly.</em></h1><p class="hero-lede">A viva is easier when you can explain what you did and why. Review the questions, rehearse short answers, and connect each idea to your own practical.</p><div class="hero-actions"><a class="button primary" href="#question-bank">Explore questions <span>↓</span></a><a class="button outline" href="asdd-viva-questions.pdf" download>Download viva PDF <span>↓</span></a></div></div>
+        <div class="viva-hero-copy"><div id="viva-hero-eyebrow" class="eyebrow"><i class="live-dot"></i> ASDD · SIX EXPERIMENTS · 124 QUESTIONS</div><h1>Know it.<br><em>Say it clearly.</em></h1><p class="hero-lede">A viva is easier when you can explain what you did and why. Review the questions, rehearse short answers, and connect each idea to your own practical.</p><div class="hero-actions"><a class="button primary" href="#question-bank">Explore questions <span>↓</span></a><a id="viva-download" class="button outline" href="asdd-viva-questions.pdf" download>Download ASDD viva PDF <span>↓</span></a></div></div>
         <div class="viva-orbit" aria-hidden="true"><div class="viva-ring ring-one"></div><div class="viva-ring ring-two"></div><div class="viva-center"><span>Q</span><b>↗</b></div><div class="orbit-label label-define">01 <b>DEFINE</b></div><div class="orbit-label label-purpose">02 <b>PURPOSE</b></div><div class="orbit-label label-proof">03 <b>PROVE IT</b></div><div class="orbit-spark">✳</div></div>
       </section>
       <section class="prep-section wrap" aria-labelledby="prep-heading">
         <div class="section-heading reveal"><div><div class="section-index">[ YOUR VIVA GAME PLAN ]</div><h2 id="prep-heading">A clear answer<br>sticks with you<span class="red-dot">.</span></h2></div><p>The supplied guide recommends defining the idea, explaining its purpose, then linking it to a command, tool, or result from your practical.</p></div>
         <div class="answer-formula"><article><span>01</span><h3>Define it</h3><p>Give a simple, accurate meaning in your own words.</p></article><article><span>02</span><h3>Say why</h3><p>Explain what the tool or concept helps you do.</p></article><article><span>03</span><h3>Make it real</h3><p>Connect it to the command, project, or expected output you used.</p></article></div>
         <div class="prep-lower"><div class="walkthrough-card"><div class="section-index">[ 60-SECOND PRACTICAL WALKTHROUGH ]</div><h3>Tell the story in order</h3><ol><li><b>Aim</b><span>What were you trying to learn?</span></li><li><b>Setup</b><span>Which tools or files did you need?</span></li><li><b>Steps</b><span>What did you actually do?</span></li><li><b>Proof</b><span>What output showed it worked?</span></li><li><b>Recovery</b><span>What would you check if it failed?</span></li></ol></div>
-          <div class="checklist-card"><div class="section-index">[ READY-TO-GO CHECKLIST ]</div><h3>Before you walk in</h3><ul><li>I can state the objective and main tool for every experiment.</li><li>I can explain Jira, the backlog, and a Sprint.</li><li>I can explain Git staging, commits, branches, and merging.</li><li>I can name the CI trigger and success check.</li><li>I can describe the Dockerfile, image, container, and output.</li><li>I can explain Nginx, Redis, port 8080:80, and localhost:8080.</li><li>I can explain Kubernetes Pods, Deployments, and replicas.</li><li>I know the actual project and resource names from my own setup.</li></ul><p class="accuracy-note">Be accurate about what you ran. If a command didn’t run on your machine, explain its purpose without claiming it succeeded.</p></div></div>
+          <div class="checklist-card"><div class="section-index">[ READY-TO-GO CHECKLIST ]</div><h3 id="viva-checklist-title">Before you walk in</h3><ul id="viva-checklist-list"><li>I can state the objective and main tool for every experiment.</li><li>I can explain Jira, the backlog, and a Sprint.</li><li>I know the actual project and resource names from my own setup.</li></ul><p class="accuracy-note">Be accurate about what you ran. If a command didn’t run on your machine, explain its purpose without claiming it succeeded.</p></div></div>
       </section>
       <section class="question-section" id="question-bank">
         <div class="wrap">
-          <div class="section-heading reveal"><div><div class="section-index">[ QUESTION BANK ]</div><h2>Practice out loud<span class="red-dot">.</span></h2></div><p>All six experiment sets are searchable. Try answering before you open the short model explanation.</p></div>
+          <div class="section-heading reveal"><div><div class="section-index">[ QUESTION BANK ]</div><h2>Practice out loud<span class="red-dot">.</span></h2></div><p id="viva-bank-description">ASDD questions from six experiment sets. Try answering before you open the short model explanation.</p></div>
           <div class="question-tools"><label class="search-box"><span aria-hidden="true">⌕</span><span class="sr-only">Search viva questions</span><input id="viva-search" type="search" placeholder="Search a topic, command, or question…" autocomplete="off"></label><label class="filter-box"><span class="sr-only">Filter by experiment</span><select id="viva-filter"><option value="all">All six experiments</option></select></label><button id="answers-toggle" class="button outline small-button" type="button">Show all answers</button></div>
           <p id="viva-result-count" class="result-count" aria-live="polite">Loading questions…</p>
           <div id="viva-groups" class="viva-groups"></div>
           <div id="viva-empty" class="empty-state" hidden>No questions match that search yet. Try a tool name such as Git, Docker, Redis, or Pod.</div>
-          <div class="source-note">Question wording and concise answers are taken from the supplied viva study guide. Use them to revise, then describe your own setup and results. <a href="asdd-viva-questions.pdf" download>Download the original PDF ↗</a></div>
+          <div id="viva-source-note" class="source-note">ASDD questions are based on the supplied viva study guide. Use them to revise, then describe your own setup and results. <a href="asdd-viva-questions.pdf" download>Download the original PDF ↗</a></div>
         </div>
       </section>
       <section class="command-section wrap">

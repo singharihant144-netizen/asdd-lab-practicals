@@ -153,13 +153,28 @@ function addMessage(text, side) {
 }
 function replyTo(question) {
   const q = question.toLowerCase();
+  if (/smlds|iris|titanic|breast.?cancer|california housing|housing|pca|bootstrap|ridge|lasso|elastic.?net|hypothesis|p.?value|vif|cook.?s|mle|sampling|classification|regression|pandas|dataset|csv|scikit|seaborn|sklearn|standardscaler/i.test(q)) {
+    if (/no module named|modulenotfound|importerror|install package/i.test(q)) return "For SMLDS, install the experiment dependencies in your active Python environment with: python -m pip install numpy pandas matplotlib seaborn scikit-learn scipy statsmodels. Then restart the notebook or VS Code kernel and run the script again. If the error names one specific package, check that package in the same interpreter VS Code is using.";
+    if (/file not found|filenotfound|read_csv|csv path|dataset path/i.test(q)) return "The supplied data files are in smlds/datasets/. Check the exact spelling and run from the folder you expect. For a local file, use a path such as pd.read_csv('smlds/datasets/iris.csv'). Some original scripts use sklearn or Seaborn loaders instead of the CSV, so inspect the loader at the top of the script.";
+    if (/connection|internet|url|fetch|download.*dataset/i.test(q)) return "Some original SMLDS scripts load built-in Seaborn or scikit-learn datasets and may need internet on the first run. The CSVs are included under smlds/datasets/ for local use. Switch the loader to pd.read_csv with the right CSV filename, then check column names because CSV headers may differ from the built-in dataset.";
+    if (/convergence|did not converge|converge/i.test(q)) return "For an SMLDS model convergence warning, confirm the features are scaled, then check the model's max_iter and parameter settings. A warning is not the same as a successful fit; inspect the output and compare models only after the estimator finishes.";
+    if (/could not convert|found unknown categories|input contains nan|nan|missing value/i.test(q)) return "For an SMLDS preprocessing error, inspect the selected feature columns and missing-value counts first. Impute or remove missing rows deliberately, encode text categories before fitting, and apply the same fitted transformations to train and test data.";
+    const rankedSMLDS = smldsExperiments.map(experiment => {
+      const words = (experiment.dataset + " " + experiment.title + " " + experiment.file).toLowerCase().split(/[^a-z0-9.+-]+/).filter(word => word.length > 2);
+      return {experiment, score: words.reduce((n, word) => n + (q.includes(word) ? (word.length > 5 ? 2 : 1) : 0), 0)};
+    }).sort((a,b) => b.score - a.score);
+    if (rankedSMLDS[0]?.score > 0) {
+      const item = rankedSMLDS[0].experiment;
+      return `For ${item.dataset} — ${item.title}, open the complete ${item.file} script in the SMLDS Lab tab and check the first traceback line. Confirm the dataset columns, required imports, and train/test transformations match the code. The supplied CSVs are available in the dataset cards; original scripts may use a built-in loader instead.`;
+    }
+  }
   const ranked = labs.map(l => {
     const terms = (l.keywords + " " + l.title + " " + l.aim).toLowerCase().split(/[^a-z0-9.+-]+/).filter(w => w.length > 2);
     const score = terms.reduce((n, w) => n + (q.includes(w) ? (w.length > 5 ? 2 : 1) : 0), 0);
     return { lab: l, score };
   }).sort((a,b) => b.score - a.score);
   const best = ranked[0];
-  if (!best || best.score < 2) return "I don’t see that exact issue in this guide yet. What practical are you on (Jira, Git, Actions, Docker, Compose, Kubernetes, or Flask), and what is the first error line? Start by checking the file path, spelling, and whether the required service is running.";
+  if (!best || best.score < 2) return "I don’t see that exact issue in the guides yet. Which subject (ASDD or SMLDS), dataset or practical, and experiment are you on? Share the first error line and check the file path, spelling, required imports, and whether the data source is reachable.";
   const lab = best.lab;
   const matched = lab.errors.find(([h,d]) => (h + " " + d).toLowerCase().split(/[^a-z0-9.+-]+/).some(w => w.length > 4 && q.includes(w)));
   const relevantStep = lab.steps.map(s => ({s, score:(s[0]+" "+s[1]+" "+(s[2]||"")).toLowerCase().split(/[^a-z0-9.+-]+/).filter(w=>w.length>3&&q.includes(w)).length})).sort((a,b)=>b.score-a.score)[0];
@@ -202,7 +217,7 @@ function activateTab(button, moveFocus = false) {
   document.querySelector(".topbar nav").classList.remove("nav-open");
   document.querySelector(".menu-toggle").setAttribute("aria-expanded", "false");
   if (moveFocus) button.focus();
-  if (button.id === "tab-viva") document.querySelector(".topbar").scrollIntoView({behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth"});
+  if (button.id === "tab-viva" || button.id === "tab-smlds") document.querySelector(".topbar").scrollIntoView({behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth"});
 }
 tabButtons.forEach((button, index) => {
   button.addEventListener("click", () => activateTab(button));
@@ -217,19 +232,109 @@ tabButtons.forEach((button, index) => {
   });
 });
 
-// The question bank is built from the supplied PDF. Searching includes both the question and its answer.
-const experiments = window.vivaExperiments || [];
+// SMLDS catalogue: full supplied scripts and their CSV datasets are available as separate downloads.
+const smldsDatasets = window.smldsDatasets || [];
+const smldsExperiments = window.smldsExperiments || [];
+const datasetGrid = document.querySelector("#smlds-datasets");
+const experimentGrid = document.querySelector("#smlds-experiments");
+const smldsFilter = document.querySelector("#smlds-filter");
+const smldsSearch = document.querySelector("#smlds-search");
+const smldsCount = document.querySelector("#smlds-result-count");
+const smldsEmpty = document.querySelector("#smlds-empty");
+const copyStatus = document.querySelector("#copy-status");
+if (datasetGrid && smldsDatasets.length) {
+  datasetGrid.innerHTML = smldsDatasets.map((dataset, index) => `<article class="dataset-card dataset-${escapeHtml(dataset.tone)}"><div class="dataset-card-top"><span class="dataset-index">0${index + 1}</span><span class="dataset-glyph" aria-hidden="true">${["◉","⌂","❀","⚓"][index]}</span></div><h3>${escapeHtml(dataset.title)}</h3><p>${escapeHtml(dataset.description)}</p><div class="dataset-stats"><span>${dataset.rows.toLocaleString()} rows</span><span>${dataset.columns} columns</span></div><a class="dataset-download" href="${escapeHtml(dataset.url)}" download>Download CSV <span>↘</span></a></article>`).join("");
+}
+if (experimentGrid && smldsExperiments.length) {
+  if (smldsFilter) smldsFilter.innerHTML += smldsDatasets.map(dataset => `<option value="${escapeHtml(dataset.id)}">${escapeHtml(dataset.title)}</option>`).join("");
+  experimentGrid.innerHTML = smldsExperiments.map((experiment, index) => `<article class="smlds-experiment" data-experiment="${escapeHtml(experiment.id)}" data-dataset="${escapeHtml(experiment.datasetId)}" data-search="${escapeHtml((experiment.dataset+" "+experiment.title+" "+experiment.file).toLowerCase())}"><div class="smlds-experiment-head"><span class="experiment-index">${String(index + 1).padStart(2,"0")}</span><span class="dataset-tag">${escapeHtml(experiment.dataset)}</span></div><h3>${escapeHtml(experiment.title)}</h3><p class="experiment-file"><code>${escapeHtml(experiment.file)}</code></p><div class="experiment-actions"><button class="button primary small-button copy-experiment" type="button" data-copy-experiment="${escapeHtml(experiment.id)}">Copy full experiment</button><a class="button outline small-button" href="${escapeHtml(experiment.url)}" download>Download .py</a></div><details class="source-preview"><summary>View complete script <span>↘</span></summary><pre><code>${escapeHtml(experiment.code)}</code></pre></details></article>`).join("");
+  function filterSMLDS() {
+    const query = (smldsSearch?.value || "").trim().toLowerCase();
+    const selected = smldsFilter?.value || "all";
+    let visible = 0;
+    experimentGrid.querySelectorAll(".smlds-experiment").forEach(card => {
+      const match = (selected === "all" || card.dataset.dataset === selected) && (!query || card.dataset.search.includes(query) || card.textContent.toLowerCase().includes(query));
+      card.hidden = !match;
+      if (match) visible++;
+    });
+    if (smldsCount) smldsCount.textContent = `${visible} of ${smldsExperiments.length} experiments shown`;
+    if (smldsEmpty) smldsEmpty.hidden = visible !== 0;
+  }
+  smldsSearch?.addEventListener("input", filterSMLDS);
+  smldsFilter?.addEventListener("change", filterSMLDS);
+  filterSMLDS();
+  experimentGrid.addEventListener("click", async event => {
+    const button = event.target.closest("[data-copy-experiment]");
+    if (!button) return;
+    const experiment = smldsExperiments.find(item => item.id === button.dataset.copyExperiment);
+    if (!experiment) return;
+    try {
+      if (navigator.clipboard?.writeText) await navigator.clipboard.writeText(experiment.code);
+      else {
+        const field = document.createElement("textarea"); field.value = experiment.code; field.setAttribute("readonly", ""); field.style.position = "fixed"; field.style.opacity = "0"; document.body.appendChild(field); field.select();
+        const copied = document.execCommand("copy"); field.remove(); if (!copied) throw new Error("Copy unavailable");
+      }
+      button.textContent = "Copied full experiment ✓";
+      if (copyStatus) copyStatus.textContent = `${experiment.title} for ${experiment.dataset} copied in full.`;
+      window.setTimeout(() => { button.textContent = "Copy full experiment"; }, 2200);
+    } catch {
+      if (copyStatus) copyStatus.textContent = "Clipboard access was blocked. Open View complete script and select the code to copy it.";
+    }
+  });
+}
+
+// The viva bank switches between the ASDD source PDF and SMLDS experiment-based questions.
+let activeVivaTrack = "asdd";
+const asddExperiments = window.vivaExperiments || [];
+const smldsVivaExperiments = window.smldsVivaExperiments || [];
+const vivaTracks = [...document.querySelectorAll("[data-viva-track]")];
+const vivaHeroEyebrow = document.querySelector("#viva-hero-eyebrow");
+const vivaDownload = document.querySelector("#viva-download");
+const vivaBankDescription = document.querySelector("#viva-bank-description");
+const vivaSourceNote = document.querySelector("#viva-source-note");
+const vivaChecklistTitle = document.querySelector("#viva-checklist-title");
+const vivaChecklistList = document.querySelector("#viva-checklist-list");
 const searchBox = document.querySelector("#viva-search");
 const experimentFilter = document.querySelector("#viva-filter");
 const vivaGroups = document.querySelector("#viva-groups");
 const resultCount = document.querySelector("#viva-result-count");
 const emptyState = document.querySelector("#viva-empty");
-if (experiments.length && searchBox && experimentFilter && vivaGroups) {
+function currentVivaExperiments() { return activeVivaTrack === "smlds" ? smldsVivaExperiments : asddExperiments; }
+function renderViva() {
+  const experiments = currentVivaExperiments();
+  if (!experiments.length || !searchBox || !experimentFilter || !vivaGroups) return;
   const totalQuestions = experiments.reduce((count, item) => count + item.questions.length, 0);
-  experimentFilter.innerHTML += experiments.map(exp => `<option value="${exp.number}">Experiment ${Number(exp.number)} · ${escapeHtml(exp.title)}</option>`).join("");
-  vivaGroups.innerHTML = experiments.map(exp => `<section class="viva-group" data-experiment="${exp.number}"><div class="viva-group-heading"><span class="viva-group-num">${exp.number}</span><div><small>EXPERIMENT ${Number(exp.number)}</small><h3>${escapeHtml(exp.title)}</h3></div><span class="group-count">${exp.questions.length} questions</span></div><div class="question-list">${exp.questions.map(item => `<details class="viva-question" data-search="${escapeHtml((item.question+" "+item.answer).toLowerCase())}"><summary><span class="q-number">Q${item.number}</span><span class="q-title">${escapeHtml(item.question)}</span><span class="q-toggle" aria-hidden="true">+</span></summary><div class="q-answer"><span>SHORT ANSWER</span><p>${escapeHtml(item.answer)}</p></div></details>`).join("")}</div></section>`).join("");
-  resultCount.textContent = `${totalQuestions} questions · 6 experiments`;
-  function filterViva() {
+  experimentFilter.innerHTML = `<option value="all">All ${experiments.length} experiment sets</option>` + experiments.map(exp => `<option value="${escapeHtml(exp.number)}">${escapeHtml(exp.number)} · ${escapeHtml(exp.title)}</option>`).join("");
+  vivaGroups.innerHTML = experiments.map(exp => `<section class="viva-group" data-experiment="${escapeHtml(exp.number)}"><div class="viva-group-heading"><span class="viva-group-num">${escapeHtml(exp.number)}</span><div><small>${activeVivaTrack === "smlds" ? escapeHtml(exp.dataset) : `EXPERIMENT ${Number(exp.number)}`}</small><h3>${escapeHtml(exp.title)}</h3></div><span class="group-count">${exp.questions.length} questions</span></div><div class="question-list">${exp.questions.map(item => `<details class="viva-question" data-search="${escapeHtml((item.question+" "+item.answer).toLowerCase())}"><summary><span class="q-number">Q${item.number}</span><span class="q-title">${escapeHtml(item.question)}</span><span class="q-toggle" aria-hidden="true">+</span></summary><div class="q-answer"><span>SHORT ANSWER</span><p>${escapeHtml(item.answer)}</p></div></details>`).join("")}</div></section>`).join("");
+  resultCount.textContent = `${totalQuestions} questions · ${experiments.length} experiment sets`;
+  if (emptyState) emptyState.hidden = true;
+  const answerToggle = document.querySelector("#answers-toggle");
+  if (answerToggle) answerToggle.textContent = "Show all answers";
+  searchBox.value = "";
+  const trackFilter = experimentFilter.value;
+  if (!experiments.some(exp => exp.number === trackFilter)) experimentFilter.value = "all";
+  const asddTrack = activeVivaTrack === "asdd";
+  vivaTracks.forEach(button => {
+    const selected = button.dataset.vivaTrack === activeVivaTrack;
+    button.classList.toggle("is-active", selected); button.setAttribute("aria-selected", String(selected)); button.tabIndex = selected ? 0 : -1;
+  });
+  if (vivaHeroEyebrow) vivaHeroEyebrow.innerHTML = asddTrack ? '<i class="live-dot"></i> ASDD · SIX EXPERIMENTS · 124 QUESTIONS' : '<i class="live-dot"></i> SMLDS · 26 EXPERIMENTS · 104 QUESTIONS';
+  if (vivaDownload) {
+    vivaDownload.href = asddTrack ? "asdd-viva-questions.pdf" : "#question-bank";
+    vivaDownload.textContent = asddTrack ? "Download ASDD viva PDF ↓" : "SMLDS questions below ↓";
+    vivaDownload.toggleAttribute("download", asddTrack);
+  }
+  if (vivaBankDescription) vivaBankDescription.textContent = asddTrack ? "ASDD questions from six experiment sets. Try answering before you open the short model explanation." : "SMLDS questions cover all 26 supplied experiments and four datasets. Try answering before you open the short model explanation.";
+  if (vivaSourceNote) vivaSourceNote.innerHTML = asddTrack ? 'ASDD questions are based on the supplied viva study guide. Use them to revise, then describe your own setup and results. <a href="asdd-viva-questions.pdf" download>Download the original PDF ↗</a>' : 'These model questions and concise answers were written from the 26 supplied SMLDS experiment scripts. Check the code and your own output when preparing an explanation.';
+  if (vivaChecklistTitle) vivaChecklistTitle.textContent = asddTrack ? "Before you walk in" : "SMLDS topics to rehearse";
+  if (vivaChecklistList) {
+    const items = asddTrack ? ["I can state the objective and main tool for every experiment.","I can explain Jira, the backlog, and a Sprint.","I can explain Git staging, commits, branches, and merging.","I can name the CI trigger and success check.","I can describe the Dockerfile, image, container, and output.","I can explain Nginx, Redis, port 8080:80, and localhost:8080.","I can explain Kubernetes Pods, Deployments, and replicas.","I know the actual project and resource names from my own setup."] : ["I can explain sampling, the Central Limit Theorem, and bootstrap resampling.","I can distinguish classification from regression and explain the metrics used.","I can explain preprocessing, scaling, missing values, and data leakage.","I can describe tree ensembles, regularization, PCA, and clustering.","I can choose between a t-test, chi-square test, ANOVA, and permutation test.","I can interpret p-values, confidence intervals, residuals, VIF, and Cook’s Distance.","I can explain MLE and identify the parameters estimated in my chosen experiment.","I can name the dataset columns and describe my actual result without inventing it."];
+    vivaChecklistList.innerHTML = items.map(item => `<li>${escapeHtml(item)}</li>`).join("");
+  }
+}
+function filterViva() {
+    const experiments = currentVivaExperiments();
+    const totalQuestions = experiments.reduce((count, item) => count + item.questions.length, 0);
     const query = searchBox.value.trim().toLowerCase();
     const selected = experimentFilter.value;
     let visible = 0;
@@ -243,20 +348,32 @@ if (experiments.length && searchBox && experimentFilter && vivaGroups) {
       });
       group.hidden = shownInGroup === 0;
     });
-    resultCount.textContent = `${visible} of ${totalQuestions} questions shown`;
+    resultCount.textContent = `${visible} of ${totalQuestions} questions shown · ${experiments.length} experiment sets`;
     emptyState.hidden = visible !== 0;
   }
-  searchBox.addEventListener("input", filterViva);
-  experimentFilter.addEventListener("change", filterViva);
-  document.querySelector("#answers-toggle").addEventListener("click", event => {
+searchBox.addEventListener("input", filterViva);
+experimentFilter.addEventListener("change", filterViva);
+document.querySelector("#answers-toggle").addEventListener("click", event => {
     const cards = [...vivaGroups.querySelectorAll(".viva-question:not([hidden])")];
     const openAll = cards.some(card => !card.open);
     cards.forEach(card => { card.open = openAll; });
     event.currentTarget.textContent = openAll ? "Hide all answers" : "Show all answers";
   });
-} else if (resultCount) {
-  resultCount.textContent = "The question list could not be loaded. Use the PDF download to open the complete guide.";
-}
+vivaTracks.forEach((button, index) => {
+  button.addEventListener("click", () => { activeVivaTrack = button.dataset.vivaTrack; renderViva(); });
+  button.addEventListener("keydown", event => {
+      let next = index;
+      if (event.key === "ArrowRight") next = (index + 1) % vivaTracks.length;
+      else if (event.key === "ArrowLeft") next = (index - 1 + vivaTracks.length) % vivaTracks.length;
+      else if (event.key === "Home") next = 0;
+      else if (event.key === "End") next = vivaTracks.length - 1;
+      else return;
+      event.preventDefault();
+      activeVivaTrack = vivaTracks[next].dataset.vivaTrack; renderViva(); vivaTracks[next].focus();
+  });
+});
+renderViva();
+if (!asddExperiments.length && resultCount) resultCount.textContent = "The question list could not be loaded. Use the PDF download to open the complete guide.";
 
 const commandGroups = [
   ["Git", [["git --version","Check installed version"],["git config --global user.name \"Your Name\"","Set commit author name"],["git config --global user.email \"you@example.com\"","Set commit author email"],["git init","Initialize repository"],["git status","Check file status"],["git add .","Stage changes"],["git commit -m \"Initial commit\"","Record changes"],["git log --oneline","View commit history"],["git branch feature","Create branch"],["git checkout feature","Switch branch"],["git checkout main","Switch to main"],["git merge feature","Merge branch"]]],
