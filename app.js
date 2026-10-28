@@ -153,6 +153,19 @@ function addMessage(text, side) {
 }
 function replyTo(question) {
   const q = question.toLowerCase();
+  if (/wmc|wireless|handover|multipath|bpsk|awgn|bit error|\bber\b|base station|d.?bm|fading/i.test(q)) {
+    if (/no module named|modulenotfound|importerror|install package/i.test(q)) return "For the WMC scripts, install the two required packages in the Python environment you use to run the file: python -m pip install numpy matplotlib. Then restart that terminal or notebook kernel and try again.";
+    if (/plot|figure|show|matplotlib|backend|display/i.test(q)) return "These WMC experiments open Matplotlib figures with plt.show(). Run them in a graphical desktop or notebook. If a remote terminal has no display, save the figure with plt.savefig('result.png') or configure a notebook plotting backend.";
+    const wmcItems = window.wmcExperiments || [];
+    const rankedWMC = wmcItems.map(experiment => {
+      const words = (experiment.title + " " + experiment.file + " " + experiment.code).toLowerCase().split(/[^a-z0-9.+-]+/).filter(word => word.length > 2);
+      return {experiment, score: words.reduce((n, word) => n + (q.includes(word) ? (word.length > 5 ? 2 : 1) : 0), 0)};
+    }).sort((a,b) => b.score - a.score);
+    if (rankedWMC[0]?.score > 0) {
+      const item = rankedWMC[0].experiment;
+      return `For WMC — ${item.title}, open ${item.file} in the WMC Lab tab. Check the first traceback line and confirm NumPy and Matplotlib are installed. These scripts generate their own simulated signals and do not require a database.`;
+    }
+  }
   if (/smlds|iris|titanic|breast.?cancer|california housing|housing|pca|bootstrap|ridge|lasso|elastic.?net|hypothesis|p.?value|vif|cook.?s|mle|sampling|classification|regression|pandas|dataset|csv|scikit|seaborn|sklearn|standardscaler/i.test(q)) {
     if (/no module named|modulenotfound|importerror|install package/i.test(q)) return "For SMLDS, install the experiment dependencies in your active Python environment with: python -m pip install numpy pandas matplotlib seaborn scikit-learn scipy statsmodels. Then restart the notebook or VS Code kernel and run the script again. If the error names one specific package, check that package in the same interpreter VS Code is using.";
     if (/file not found|filenotfound|read_csv|csv path|dataset path/i.test(q)) return "The supplied data files are in smlds/datasets/. Check the exact spelling and run from the folder you expect. For a local file, use a path such as pd.read_csv('smlds/datasets/iris.csv'). Some original scripts use sklearn or Seaborn loaders instead of the CSV, so inspect the loader at the top of the script.";
@@ -203,7 +216,7 @@ if ("IntersectionObserver" in window) {
   document.querySelectorAll(".reveal").forEach(el => el.classList.add("is-visible"));
 }
 
-// The two study areas behave as keyboard-accessible tabs. The shared aa help remains available below them.
+// Study areas behave as keyboard-accessible tabs. The shared aa help remains available below them.
 const tabButtons = [...document.querySelectorAll(".site-tab")];
 const tabPanels = [...document.querySelectorAll(".site-panel")];
 function activateTab(button, moveFocus = false) {
@@ -217,7 +230,7 @@ function activateTab(button, moveFocus = false) {
   document.querySelector(".topbar nav").classList.remove("nav-open");
   document.querySelector(".menu-toggle").setAttribute("aria-expanded", "false");
   if (moveFocus) button.focus();
-  if (button.id === "tab-viva" || button.id === "tab-smlds") document.querySelector(".topbar").scrollIntoView({behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth"});
+  if (button.id === "tab-viva" || button.id === "tab-smlds" || button.id === "tab-wmc") document.querySelector(".topbar").scrollIntoView({behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth"});
 }
 tabButtons.forEach((button, index) => {
   button.addEventListener("click", () => activateTab(button));
@@ -283,10 +296,44 @@ if (experimentGrid && smldsExperiments.length) {
   });
 }
 
-// The viva bank switches between the ASDD source PDF and SMLDS experiment-based questions.
+// WMC catalogue: original complete Python simulations with copy and download controls.
+const wmcExperiments = window.wmcExperiments || [];
+const wmcGrid = document.querySelector("#wmc-experiments");
+const wmcSearch = document.querySelector("#wmc-search");
+const wmcCount = document.querySelector("#wmc-result-count");
+const wmcEmpty = document.querySelector("#wmc-empty");
+const wmcCopyStatus = document.querySelector("#wmc-copy-status");
+if (wmcGrid && wmcExperiments.length) {
+  wmcGrid.innerHTML = wmcExperiments.map((experiment, index) => `<article class="smlds-experiment wmc-experiment" data-experiment="${escapeHtml(experiment.id)}" data-search="${escapeHtml((experiment.title+" "+experiment.file+" "+experiment.code).toLowerCase())}"><div class="smlds-experiment-head"><span class="experiment-index">${String(index+1).padStart(2,"0")}</span><span class="dataset-tag">WIRELESS SIMULATION</span></div><h3>${escapeHtml(experiment.title)}</h3><p class="experiment-file"><code>${escapeHtml(experiment.file)}</code></p><div class="experiment-actions"><button class="button primary small-button" type="button" data-copy-wmc="${escapeHtml(experiment.id)}">Copy full experiment</button><a class="button outline small-button" href="${escapeHtml(experiment.url)}" download>Download .py</a></div><details class="source-preview"><summary>View complete script <span>↘</span></summary><pre><code>${escapeHtml(experiment.code)}</code></pre></details></article>`).join("");
+  function filterWMC() {
+    const query = (wmcSearch?.value || "").trim().toLowerCase();
+    let visible = 0;
+    wmcGrid.querySelectorAll(".wmc-experiment").forEach(card => { const match = !query || card.dataset.search.includes(query) || card.textContent.toLowerCase().includes(query); card.hidden = !match; if (match) visible++; });
+    if (wmcCount) wmcCount.textContent = `${visible} of ${wmcExperiments.length} experiments shown`;
+    if (wmcEmpty) wmcEmpty.hidden = visible !== 0;
+  }
+  wmcSearch?.addEventListener("input", filterWMC);
+  filterWMC();
+  wmcGrid.addEventListener("click", async event => {
+    const button = event.target.closest("[data-copy-wmc]");
+    if (!button) return;
+    const experiment = wmcExperiments.find(item => item.id === button.dataset.copyWmc);
+    if (!experiment) return;
+    try {
+      if (navigator.clipboard?.writeText) await navigator.clipboard.writeText(experiment.code);
+      else { const field=document.createElement("textarea"); field.value=experiment.code; field.setAttribute("readonly",""); field.style.position="fixed"; field.style.opacity="0"; document.body.appendChild(field); field.select(); const copied=document.execCommand("copy"); field.remove(); if(!copied) throw new Error("Copy unavailable"); }
+      button.textContent = "Copied full experiment ✓";
+      if (wmcCopyStatus) wmcCopyStatus.textContent = `${experiment.title} copied in full.`;
+      window.setTimeout(() => { button.textContent = "Copy full experiment"; }, 2200);
+    } catch { if (wmcCopyStatus) wmcCopyStatus.textContent = "Clipboard access was blocked. Open View complete script and select the code to copy it."; }
+  });
+}
+
+// The viva bank switches between ASDD, SMLDS, and WMC questions.
 let activeVivaTrack = "asdd";
 const asddExperiments = window.vivaExperiments || [];
 const smldsVivaExperiments = window.smldsVivaExperiments || [];
+const wmcVivaExperiments = window.wmcVivaExperiments || [];
 const vivaTracks = [...document.querySelectorAll("[data-viva-track]")];
 const vivaHeroEyebrow = document.querySelector("#viva-hero-eyebrow");
 const vivaDownload = document.querySelector("#viva-download");
@@ -299,7 +346,7 @@ const experimentFilter = document.querySelector("#viva-filter");
 const vivaGroups = document.querySelector("#viva-groups");
 const resultCount = document.querySelector("#viva-result-count");
 const emptyState = document.querySelector("#viva-empty");
-function currentVivaExperiments() { return activeVivaTrack === "smlds" ? smldsVivaExperiments : asddExperiments; }
+function currentVivaExperiments() { return activeVivaTrack === "smlds" ? smldsVivaExperiments : activeVivaTrack === "wmc" ? wmcVivaExperiments : asddExperiments; }
 function renderViva() {
   const experiments = currentVivaExperiments();
   if (!experiments.length || !searchBox || !experimentFilter || !vivaGroups) return;
@@ -314,21 +361,22 @@ function renderViva() {
   const trackFilter = experimentFilter.value;
   if (!experiments.some(exp => exp.number === trackFilter)) experimentFilter.value = "all";
   const asddTrack = activeVivaTrack === "asdd";
+  const smldsTrack = activeVivaTrack === "smlds";
   vivaTracks.forEach(button => {
     const selected = button.dataset.vivaTrack === activeVivaTrack;
     button.classList.toggle("is-active", selected); button.setAttribute("aria-selected", String(selected)); button.tabIndex = selected ? 0 : -1;
   });
-  if (vivaHeroEyebrow) vivaHeroEyebrow.innerHTML = asddTrack ? '<i class="live-dot"></i> ASDD · SIX EXPERIMENTS · 124 QUESTIONS' : '<i class="live-dot"></i> SMLDS · 26 EXPERIMENTS · 104 QUESTIONS';
+  if (vivaHeroEyebrow) vivaHeroEyebrow.innerHTML = asddTrack ? '<i class="live-dot"></i> ASDD · SIX EXPERIMENTS · 124 QUESTIONS' : smldsTrack ? '<i class="live-dot"></i> SMLDS · 26 EXPERIMENTS · 104 QUESTIONS' : '<i class="live-dot"></i> WMC · THREE EXPERIMENTS · 30 QUESTIONS';
   if (vivaDownload) {
-    vivaDownload.href = asddTrack ? "asdd-viva-questions.pdf" : "#question-bank";
-    vivaDownload.textContent = asddTrack ? "Download ASDD viva PDF ↓" : "SMLDS questions below ↓";
-    vivaDownload.toggleAttribute("download", asddTrack);
+    vivaDownload.href = asddTrack ? "asdd-viva-questions.pdf" : smldsTrack ? "#question-bank" : "wmc-viva-questions.md";
+    vivaDownload.textContent = asddTrack ? "Download ASDD viva PDF ↓" : smldsTrack ? "SMLDS questions below ↓" : "Download WMC viva questions ↓";
+    vivaDownload.toggleAttribute("download", asddTrack || !smldsTrack);
   }
-  if (vivaBankDescription) vivaBankDescription.textContent = asddTrack ? "ASDD questions from six experiment sets. Try answering before you open the short model explanation." : "SMLDS questions cover all 26 supplied experiments and four datasets. Try answering before you open the short model explanation.";
-  if (vivaSourceNote) vivaSourceNote.innerHTML = asddTrack ? 'ASDD questions are based on the supplied viva study guide. Use them to revise, then describe your own setup and results. <a href="asdd-viva-questions.pdf" download>Download the original PDF ↗</a>' : 'These model questions and concise answers were written from the 26 supplied SMLDS experiment scripts. Check the code and your own output when preparing an explanation.';
-  if (vivaChecklistTitle) vivaChecklistTitle.textContent = asddTrack ? "Before you walk in" : "SMLDS topics to rehearse";
+  if (vivaBankDescription) vivaBankDescription.textContent = asddTrack ? "ASDD questions from six experiment sets. Try answering before you open the short model explanation." : smldsTrack ? "SMLDS questions cover all 26 supplied experiments and four datasets. Try answering before you open the short model explanation." : "WMC questions are grounded in the three supplied Python simulations. Rehearse the model assumptions as well as the wireless concepts.";
+  if (vivaSourceNote) vivaSourceNote.innerHTML = asddTrack ? 'ASDD questions are based on the supplied viva study guide. Use them to revise, then describe your own setup and results. <a href="asdd-viva-questions.pdf" download>Download the original PDF ↗</a>' : smldsTrack ? 'These model questions and concise answers were written from the 26 supplied SMLDS experiment scripts. Check the code and your own output when preparing an explanation.' : 'WMC model questions and answers are based on the three supplied scripts: handover_simulation.py, multipath_effect.py, and wmcexp2.py. Explain simplifications honestly and refer to your own plotted output.';
+  if (vivaChecklistTitle) vivaChecklistTitle.textContent = asddTrack ? "Before you walk in" : smldsTrack ? "SMLDS topics to rehearse" : "WMC topics to rehearse";
   if (vivaChecklistList) {
-    const items = asddTrack ? ["I can state the objective and main tool for every experiment.","I can explain Jira, the backlog, and a Sprint.","I can explain Git staging, commits, branches, and merging.","I can name the CI trigger and success check.","I can describe the Dockerfile, image, container, and output.","I can explain Nginx, Redis, port 8080:80, and localhost:8080.","I can explain Kubernetes Pods, Deployments, and replicas.","I know the actual project and resource names from my own setup."] : ["I can explain sampling, the Central Limit Theorem, and bootstrap resampling.","I can distinguish classification from regression and explain the metrics used.","I can explain preprocessing, scaling, missing values, and data leakage.","I can describe tree ensembles, regularization, PCA, and clustering.","I can choose between a t-test, chi-square test, ANOVA, and permutation test.","I can interpret p-values, confidence intervals, residuals, VIF, and Cook’s Distance.","I can explain MLE and identify the parameters estimated in my chosen experiment.","I can name the dataset columns and describe my actual result without inventing it."];
+    const items = asddTrack ? ["I can state the objective and main tool for every experiment.","I can explain Jira, the backlog, and a Sprint.","I can explain Git staging, commits, branches, and merging.","I can name the CI trigger and success check.","I can describe the Dockerfile, image, container, and output.","I can explain Nginx, Redis, port 8080:80, and localhost:8080.","I can explain Kubernetes Pods, Deployments, and replicas.","I know the actual project and resource names from my own setup."] : smldsTrack ? ["I can explain sampling, the Central Limit Theorem, and bootstrap resampling.","I can distinguish classification from regression and explain the metrics used.","I can explain preprocessing, scaling, missing values, and data leakage.","I can describe tree ensembles, regularization, PCA, and clustering.","I can choose between a t-test, chi-square test, ANOVA, and permutation test.","I can interpret p-values, confidence intervals, residuals, VIF, and Cook’s Distance.","I can explain MLE and identify the parameters estimated in my chosen experiment.","I can name the dataset columns and describe my actual result without inventing it."] : ["I can describe what handover changes as the mobile moves between cells.","I can explain how the two signal-strength curves define the illustrative handover point.","I know dBm and why real handover uses hysteresis or time-to-trigger.","I can explain multipath delay, attenuation, and constructive/destructive addition.","I can describe numpy.roll and its circular wrap-around limitation.","I can map bits to -1/+1 BPSK symbols and explain the zero threshold.","I can explain AWGN, SNR conversion, and the noise variance in the script.","I can calculate BER and explain why a short random run varies.","I can name the NumPy and Matplotlib dependencies and interpret the plots honestly."];
     vivaChecklistList.innerHTML = items.map(item => `<li>${escapeHtml(item)}</li>`).join("");
   }
 }
