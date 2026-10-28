@@ -202,7 +202,7 @@ function send(text) { const trimmed = text.trim(); if (!trimmed) return; addMess
 form.addEventListener("submit", e => { e.preventDefault(); send(input.value); input.value = ""; });
 messages.addEventListener("click", e => { if (e.target.matches(".suggestions button")) send(e.target.textContent); });
 document.querySelector(".chat-minimize").addEventListener("click", () => {
-  messages.innerHTML = `<div class="message bot"><span>Hey! Tell me what you’re trying and what error you see. I’ll help you troubleshoot using the ASDD practicals. ✨</span></div><div class="suggestions"><button>Docker won’t start</button><button>My workflow is red</button><button>Pods aren’t running</button></div>`;
+  messages.innerHTML = `<div class="message bot"><span>Hey! Tell me what you’re trying and what error you see. I can help with the ASDD, SMLDS, and WMC guides. ✨</span></div><div class="suggestions"><button>Docker won’t start</button><button>My workflow is red</button><button>WMC plots won’t show</button></div>`;
 });
 document.querySelector(".chat-fab").addEventListener("click", () => { document.querySelector("#help").scrollIntoView({behavior:"smooth"}); window.setTimeout(() => input.focus(), 500); });
 const menu = document.querySelector(".menu-toggle");
