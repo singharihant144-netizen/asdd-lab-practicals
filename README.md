@@ -1,6 +1,6 @@
 # aa hacks
 
-Responsive static study site with seven ASDD labs, 26 SMLDS Python experiments, three WMC wireless simulations, nine AISC experiments, four SMLDS dataset CSVs, and 303 searchable viva questions with model answers. Each SMLDS, WMC and AISC script can be viewed, copied in full, or downloaded. Dataset CSVs and subject study packs are available on the site.
+Responsive static study site with an interactive cursor-reactive neon-tube hero, dark glass visual system, seven ASDD labs, 26 SMLDS Python experiments, three WMC wireless simulations, nine AISC experiments, four SMLDS dataset CSVs, and 303 searchable viva questions with model answers. Each SMLDS, WMC and AISC script can be viewed, copied in full, or downloaded. Dataset CSVs and subject study packs are available on the site.
 
 ## Live site
 
@@ -11,9 +11,9 @@ GitHub Pages serves the root of the `main` branch. No build step or secrets are 
 ## Files
 
 - `index.html` — ASDD Lab, SMLDS Lab, WMC Lab, AISC Lab and Viva Prep tabs
-- `app.js` — lab rendering, experiment catalogues, search, copy controls, viva filters and subject-specific aa troubleshooting
+- `app.js`, `tubes-background.js` — lab rendering, experiment catalogues, search, copy controls, viva filters, aa troubleshooting and interactive neon background
 - `viva-data.js`, `viva-data-smlds.js`, `viva-data-wmc.js`, `aisc-viva-data.js`, `smlds-data.js`, `wmc-data.js`, `aisc-data.js` — question banks, dataset facts and full copyable experiment sources
-- `style.css`, `style-viva.css`, `style-smlds.css`, `style-wmc.css`, `style-aisc.css` — responsive layout, motion and reduced-motion support
+- `style.css`, `style-viva.css`, `style-smlds.css`, `style-wmc.css`, `style-aisc.css`, `style-redesign.css` — responsive neon glass UI, motion and reduced-motion support
 - `smlds/` — original Python files, dataset CSVs and README
 - `smlds-study-pack.zip` — scripts and all four CSVs in one download
 - `wmc/` — three original wireless simulation scripts and a run guide
